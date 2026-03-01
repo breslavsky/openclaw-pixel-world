@@ -1,6 +1,8 @@
-# OpenClaw Gateway Listener
+# OpenClaw Pixel World
 
 A real-time WebSocket listener for the OpenClaw Gateway – monitor agent activity, conversations, skill execution, and system events in real-time.
+
+![Demo](assets/demo.gif)
 
 ## Features
 
@@ -15,22 +17,29 @@ A real-time WebSocket listener for the OpenClaw Gateway – monitor agent activi
 
 ## Installation
 
-### Prerequisites
-- Node.js 18+ (Node 21+ has built-in WebSocket support; older versions need `npm install ws`)
-- TypeScript runner like `tsx` for development
-
-### Setup
+Requires Node.js 18+.
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/openclaw-gateway-listener.git
-cd openclaw-gateway-listener
-
-# Install dependencies
+git clone https://github.com/yourusername/openclaw-pixel-world.git
+cd openclaw-pixel-world
 npm install
+cp .env.example .env
+```
 
-# Create .env file with your gateway endpoint
-echo "OPENCLAW_WS_ENDPOINT=ws://your-gateway:18789/?token=YOUR_TOKEN" > .env
+## Connecting to OpenClaw
+
+1. Open your OpenClaw instance → **Settings → Gateway**
+2. Copy the WebSocket endpoint and token
+3. Set them in `.env`:
+
+```env
+OPENCLAW_WS_ENDPOINT=ws://<your-gateway>:18789/?token=<your-token>
+```
+
+Then start the listener:
+
+```bash
+npm run serve   # dashboard at http://localhost:3000
 ```
 
 ## Usage
@@ -92,7 +101,7 @@ Pretty-prints all raw WebSocket messages for debugging:
 ### With Custom Endpoint
 
 ```bash
-node listen.ts ws://10.211.55.3:18789/?token=secret
+node listen.ts ws://your-gateway:18789/?token=secret
 ```
 
 ### Disable Auto-Reconnect
@@ -112,7 +121,7 @@ npm run dev:json        # Watch mode with JSON output
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `OPENCLAW_WS_ENDPOINT` | Gateway WebSocket URL | `ws://10.211.55.3:18789/?token=xyz` |
+| `OPENCLAW_WS_ENDPOINT` | Gateway WebSocket URL | `ws://your-gateway:18789/?token=...` |
 | `OPENCLAW_API_ENDPOINT` | HTTP API returning list of agents (merged into /agents) | *none* |
 | `LISTENER_JSON` | `true` to log raw messages in server mode | `false` |
 | `LISTENER_RECONNECT` | `false` to disable auto-reconnect | `true` |
@@ -180,8 +189,8 @@ MIT – See LICENSE file for details
 ## Support
 
 - 📖 [OpenClaw Documentation](https://github.com/openclaw/openclaw)
-- 🐛 [Report Issues](https://github.com/yourusername/openclaw-gateway-listener/issues)
-- 💬 [Discussions](https://github.com/yourusername/openclaw-gateway-listener/discussions)
+- 🐛 [Report Issues](https://github.com/yourusername/openclaw-pixel-world/issues)
+- 💬 [Discussions](https://github.com/yourusername/openclaw-pixel-world/discussions)
 
 ## Changelog
 
