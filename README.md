@@ -36,11 +36,27 @@ cp .env.example .env
 OPENCLAW_WS_ENDPOINT=ws://<your-gateway>:18789/?token=<your-token>
 ```
 
+4. In your OpenClaw config (`openclaw.json`), enable full verbose output:
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "verboseDefault": "full"
+    }
+  }
+}
+```
+
 Then start the listener:
 
 ```bash
 npm run serve   # dashboard at http://localhost:3000
 ```
+
+5. On first connection, approve the listener in the OpenClaw dashboard or via CLI:
+
+![Approve connection](assets/approve.jpg)
 
 ## Usage
 
