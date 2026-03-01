@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenClaw Pixel World</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        safelist: [
+          "border-violet-600","border-blue-600","border-emerald-600","border-amber-500","border-gray-800",
+          "bg-violet-600","bg-blue-600","bg-emerald-500","bg-amber-500","bg-gray-500","bg-green-500",
+          "text-violet-400","text-blue-400","text-emerald-400","text-amber-400","text-gray-400","text-gray-500",
+          "animate-pulse",
+        ]
+      }
+    </script>
+    <style>
+      .pixel-ui {
+        font-family: "VT323", ui-monospace, "SFMono-Regular", Menlo, Monaco, monospace;
+        font-size: 22px;
+        line-height: 1.04;
+      }
+      .pixel-heading {
+        font-family: "Press Start 2P", ui-monospace, monospace;
+        letter-spacing: 0.12em;
+        font-size: 10px;
+      }
+      .panel-frame {
+        border: 2px solid #1f2937;
+        border-radius: 0;
+        box-shadow: inset 2px 2px 0 rgba(255,255,255,0.04), inset -2px -2px 0 rgba(0,0,0,0.45);
+      }
+      /* markdown prose */
+      .md p          { margin: 0 0 0.25rem; }
+      .md p:last-child { margin-bottom: 0; }
+      .md strong     { font-weight: 700; }
+      .md em         { font-style: italic; }
+      .md code       { font-family: monospace; background: #1f2937; padding: 0.1em 0.3em; border-radius: 3px; font-size: 0.85em; }
+      .md pre        { background: #1f2937; padding: 0.5rem; border-radius: 4px; overflow-x: auto; margin: 0.25rem 0; }
+      .md pre code   { background: none; padding: 0; }
+      .md ul, .md ol { padding-left: 1.1rem; margin: 0.15rem 0; }
+      .md li         { margin: 0.1rem 0; }
+
+      /* pixel office */
+      .pixel-office {
+        background-color: #0d1117;
+        background-image:
+          linear-gradient(rgba(99, 102, 241, 0.06) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(99, 102, 241, 0.06) 1px, transparent 1px),
+          linear-gradient(rgba(20, 28, 40, 0.7) 50%, rgba(12, 18, 28, 0.7) 50%);
+        background-size: 24px 24px, 24px 24px, 4px 4px;
+      }
+
+      .zone-card {
+        border-width: 2px;
+        border-style: solid;
+        border-radius: 0;
+        box-shadow: inset 2px 2px 0 rgba(255,255,255,0.05), inset -2px -2px 0 rgba(0,0,0,0.45);
+      }
+      .zone-rest {
+        border-color: rgba(107,114,128,0.75);
+        background: linear-gradient(0deg, rgba(17,24,39,0.45), rgba(17,24,39,0.65));
+      }
+      .zone-library {
+        border-color: rgba(109,40,217,0.68);
+        background: linear-gradient(0deg, rgba(59,7,100,0.32), rgba(76,29,149,0.22));
+      }
+      .zone-laboratory {
+        border-color: rgba(180,83,9,0.68);
+        background: linear-gradient(0deg, rgba(120,53,15,0.28), rgba(146,64,14,0.2));
+      }
+      .zone-office {
+        border-color: rgba(5,150,105,0.68);
+        background: linear-gradient(0deg, rgba(6,78,59,0.28), rgba(6,95,70,0.2));
+      }
+      .zone-label {
+        font-family: "Press Start 2P", ui-monospace, monospace;
+        font-size: 9px;
+        letter-spacing: 0.08em;
+      }
+      .zone-icon {
+        width: 140px;
+        height: 140px;
+        opacity: 0.25;
+        display: block;
+        shape-rendering: crispEdges;
+        image-rendering: pixelated;
+      }
+      .pixel-tag {
+        font-family: "Press Start 2P", ui-monospace, monospace;
+        font-size: 8px;
+        letter-spacing: 0.04em;
+        border-radius: 0;
+      }
+      .first-char-upper {
+        text-transform: capitalize;
+      }
+      .raw-json-toggle {
+        border-radius: 0;
+        overflow: hidden;
+      }
+      .raw-json-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 10px 12px;
+        background: rgba(17, 24, 39, 0.55);
+        cursor: pointer;
+        user-select: none;
+      }
+      .raw-json-summary::-webkit-details-marker { display: none; }
+      .raw-json-summary::marker { content: ""; }
+      .raw-json-arrow {
+        font-family: "Press Start 2P", ui-monospace, monospace;
+        font-size: 9px;
+        color: #9ca3af;
+        transform: rotate(0deg);
+        transition: transform 120ms linear;
+      }
+      .raw-json-toggle[open] .raw-json-arrow {
+        transform: rotate(90deg);
+      }
+      .raw-json-body {
+        border-top: 1px solid rgba(55, 65, 81, 0.85);
+        padding: 10px 12px;
+        background: rgba(3, 7, 18, 0.55);
+      }
+
+      .agent-sprite {
+        position: absolute;
+        transform: translateX(-50%);
+        transition: left 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                    top  0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        user-select: none;
+        z-index: 10;
+      }
+      .agent-sprite:hover { filter: brightness(1.25); }
+      .agent-sprite img   { image-rendering: pixelated; }
+
+      @keyframes think-wobble {
+        0%, 100% { transform: translateX(-50%) rotate(-3deg); }
+        50%      { transform: translateX(-50%) rotate( 3deg); }
+      }
+      @keyframes work-bounce {
+        0%, 100% { transform: translateX(-50%) translateY(0);    }
+        50%      { transform: translateX(-50%) translateY(-5px); }
+      }
+      @keyframes tool-pulse {
+        0%, 100% { transform: translateX(-50%) scale(1);    }
+        50%      { transform: translateX(-50%) scale(1.08); }
+      }
+      .agent-thinking { animation: think-wobble 0.55s ease-in-out infinite; }
+      .agent-working  { animation: work-bounce  0.90s ease-in-out infinite; }
+      .agent-tool     { animation: tool-pulse   0.70s ease-in-out infinite; }
+
+      .loading-dots::after {
+        content: "...";
+        display: inline-block;
+        width: 0;
+        overflow: hidden;
+        vertical-align: bottom;
+        animation: loading-dots 1s steps(4, end) infinite;
+      }
+      @keyframes loading-dots {
+        to { width: 1.4em; }
+      }
+    </style>
+  </head>
+  <body class="bg-gray-950 text-gray-200 pixel-ui">
+    <div id="app" class="flex flex-col h-screen">
+      <div v-if="isLoading" class="fixed inset-0 z-[200] pixel-office flex items-center justify-center">
+        <div class="panel-frame bg-gray-900/90 border-violet-700 px-6 py-5 text-center max-w-md mx-4">
+          <div class="pixel-heading text-violet-300 text-[10px] leading-snug">OpenClaw Pixel World</div>
+          <div class="text-[24px] text-gray-200 mt-3 loading-dots">Loading</div>
+          <div class="text-[14px] text-gray-500 mt-2">Preparing dashboard data…</div>
+        </div>
+      </div>
+
+      <!-- Header -->
+      <header class="panel-frame flex items-center gap-3 px-5 py-3 border-b border-gray-800 shrink-0">
+        <div class="w-2 h-2 transition-colors"
+             :class="connected ? 'bg-green-500' : 'bg-gray-500'"></div>
+        <span class="pixel-heading text-[8px] text-gray-400">{{ connected ? 'online' : 'offline' }}</span>
+        <h1 class="pixel-heading ml-auto text-[10px]">OpenClaw Pixel World</h1>
+      </header>
+
+      <!-- Body -->
+      <main class="flex-1 grid min-h-0" style="grid-template-columns: 1fr 300px">
+
+        <!-- Pixel Office -->
+        <section class="pixel-office panel-frame relative overflow-hidden">
+
+          <!-- Rest room -->
+          <div class="zone-card zone-rest absolute" style="left:6%;top:12%;width:38%;height:32%">
+            <div class="zone-label absolute left-3 top-2 text-gray-300">REST ROOM</div>
+            <div class="absolute right-2 bottom-2 text-gray-500">
+              <svg viewBox="0 0 24 24" class="zone-icon" aria-hidden="true">
+                <rect x="3" y="12" width="18" height="3" fill="currentColor" />
+                <rect x="3" y="9" width="3" height="6" fill="currentColor" />
+                <rect x="7" y="9" width="14" height="2" fill="currentColor" />
+                <rect x="15" y="7" width="6" height="2" fill="currentColor" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- Library -->
+          <div class="zone-card zone-library absolute" style="left:56%;top:12%;width:38%;height:32%">
+            <div class="zone-label absolute left-3 top-2 text-violet-300">LIBRARY</div>
+            <div class="absolute right-2 bottom-2 text-violet-400">
+              <svg viewBox="0 0 24 24" class="zone-icon" aria-hidden="true">
+                <rect x="4" y="4" width="4" height="16" fill="currentColor" />
+                <rect x="10" y="6" width="4" height="14" fill="currentColor" />
+                <rect x="16" y="3" width="4" height="17" fill="currentColor" />
+                <rect x="10" y="11" width="4" height="1.5" fill="#111827" />
+                <rect x="16" y="9" width="4" height="1.5" fill="#111827" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- Laboratory -->
+          <div class="zone-card zone-laboratory absolute" style="left:6%;top:56%;width:38%;height:34%">
+            <div class="absolute left-3 top-2 flex items-center gap-1.5">
+              <span class="zone-label text-amber-300">LABORATORY</span>
+              <button @click.stop="openTools"
+                      class="text-amber-400/60 hover:text-amber-300 transition-colors leading-none"
+                      title="View tools catalog">
+                <svg viewBox="0 0 16 16" width="11" height="11" fill="currentColor" aria-hidden="true">
+                  <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                  <rect x="7" y="6.5" width="2" height="5.5" rx="0.5"/>
+                  <rect x="7" y="3.5" width="2" height="2" rx="0.5"/>
+                </svg>
+              </button>
+            </div>
+            <div class="absolute right-2 bottom-2 text-amber-400">
+              <svg viewBox="0 0 24 24" class="zone-icon" aria-hidden="true">
+                <rect x="10" y="3" width="4" height="2" fill="currentColor" />
+                <rect x="11" y="5" width="2" height="4" fill="currentColor" />
+                <rect x="7" y="10" width="10" height="2" fill="currentColor" />
+                <rect x="6" y="12" width="12" height="2" fill="currentColor" />
+                <rect x="5" y="14" width="14" height="2" fill="currentColor" />
+                <rect x="6" y="16" width="12" height="2" fill="currentColor" />
+                <rect x="7" y="18" width="10" height="2" fill="currentColor" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- Office -->
+          <div class="zone-card zone-office absolute" style="left:56%;top:56%;width:38%;height:34%">
+            <div class="zone-label absolute left-3 top-2 text-emerald-300">OFFICE</div>
+            <div class="absolute right-2 bottom-2 text-emerald-400">
+              <svg viewBox="0 0 24 24" class="zone-icon" aria-hidden="true">
+                <rect x="5" y="3" width="14" height="18" fill="currentColor" />
+                <rect x="8" y="6" width="2" height="2" fill="#111827" />
+                <rect x="12" y="6" width="2" height="2" fill="#111827" />
+                <rect x="8" y="10" width="2" height="2" fill="#111827" />
+                <rect x="12" y="10" width="2" height="2" fill="#111827" />
+                <rect x="8" y="14" width="2" height="2" fill="#111827" />
+                <rect x="12" y="14" width="2" height="2" fill="#111827" />
+                <rect x="11" y="18" width="2" height="3" fill="#111827" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- Empty state -->
+          <p v-if="!agentList.length"
+             class="absolute inset-0 flex items-center justify-center text-sm text-gray-700 font-mono">
+            Waiting for agents…
+          </p>
+
+          <!-- Agent sprites -->
+          <div v-for="a in agentList" :key="a.agentId"
+               class="agent-sprite"
+               :class="spriteAnimCls(a.status)"
+               :style="{ left: (agentPositions[a.agentId]?.x ?? 9) + '%',
+                         top:  (agentPositions[a.agentId]?.y ?? 18) + '%' }"
+               @click="selectAgent(a)">
+            <div class="flex flex-col items-center gap-0.5">
+              <span class="pixel-tag first-char-upper text-[8px] bg-gray-950/90 border border-gray-700/80 text-gray-300 px-1 max-w-[130px] text-center leading-tight break-words">
+                {{ a.actionText || 'Ready' }}
+              </span>
+              <img :src="a.avatarUrl" class="w-10 h-10 rounded-full border-2 shrink-0"
+                   :class="borderCls(a.status)" />
+              <span class="pixel-tag text-[8px] bg-gray-950/90 px-1 leading-tight"
+                    :class="textCls(a.status)">{{ a.displayName || a.agentId }}</span>
+              <div class="w-2 h-2" :class="dotCls(a.status)"></div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- Activity Feed -->
+        <section class="panel-frame border-l border-gray-800 flex flex-col min-h-0">
+          <div class="flex items-center justify-between px-4 py-3 border-b border-gray-800 shrink-0">
+            <h2 class="pixel-heading text-[9px] text-gray-400">Tasks</h2>
+            <span class="pixel-heading text-[8px] text-gray-600">{{ tasks.length }} cards</span>
+          </div>
+          <div class="max-h-56 overflow-auto border-b border-gray-800">
+            <div class="grid grid-cols-1 gap-2 p-2">
+              <div class="panel-frame bg-gray-950/35 p-2">
+                <div class="pixel-heading text-[8px] text-gray-400">Todo ({{ todoTasks.length }})</div>
+                <div class="mt-2 space-y-2">
+                  <button v-for="task in todoTasks" :key="'todo-' + task.id"
+                          class="w-full text-left panel-frame bg-gray-900/60 px-2 py-1 hover:bg-gray-800/70"
+                          @click="openTask(task)">
+                    <div class="pixel-heading text-[7px] text-gray-200 truncate whitespace-nowrap" :title="taskRequestText(task)">{{ taskRequestText(task) }}</div>
+                    <div class="text-[12px] text-gray-500 mt-1">{{ task.displayName || task.agentId || 'n/a' }}</div>
+                    <div class="text-[11px] text-gray-600">{{ task.comments?.length || 0 }} comments</div>
+                  </button>
+                </div>
+              </div>
+              <div class="panel-frame bg-gray-950/35 p-2">
+                <div class="pixel-heading text-[8px] text-blue-300">Doing ({{ doingTasks.length }})</div>
+                <div class="mt-2 space-y-2">
+                  <button v-for="task in doingTasks" :key="'doing-' + task.id"
+                          class="w-full text-left panel-frame bg-gray-900/60 px-2 py-1 hover:bg-gray-800/70"
+                          @click="openTask(task)">
+                    <div class="pixel-heading text-[7px] text-gray-200 truncate whitespace-nowrap" :title="taskRequestText(task)">{{ taskRequestText(task) }}</div>
+                    <div class="text-[12px] text-gray-500 mt-1">{{ task.displayName || task.agentId || 'n/a' }}</div>
+                    <div class="text-[11px] text-gray-600">{{ task.comments?.length || 0 }} comments</div>
+                  </button>
+                </div>
+              </div>
+              <div class="panel-frame bg-gray-950/35 p-2">
+                <div class="pixel-heading text-[8px] text-emerald-300">Done ({{ doneTasks.length }})</div>
+                <div class="mt-2 space-y-2">
+                  <button v-for="task in doneTasks" :key="'done-' + task.id"
+                          class="w-full text-left panel-frame bg-gray-900/60 px-2 py-1 hover:bg-gray-800/70"
+                          @click="openTask(task)">
+                    <div class="pixel-heading text-[7px] text-gray-200 truncate whitespace-nowrap" :title="taskRequestText(task)">{{ taskRequestText(task) }}</div>
+                    <div class="text-[12px] text-gray-500 mt-1">{{ task.displayName || task.agentId || 'n/a' }}</div>
+                    <div class="text-[11px] text-gray-600">{{ task.comments?.length || 0 }} comments</div>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p v-if="!tasks.length" class="px-4 pb-3 text-[13px] text-gray-600">No tasks yet</p>
+          </div>
+
+          <div class="flex items-center justify-between px-4 py-3 border-b border-gray-800 shrink-0">
+            <h2 class="pixel-heading text-[9px] text-gray-400">Activity</h2>
+            <span class="pixel-heading text-[8px] text-gray-600">{{ feed.length ? feed.length + ' events' : '' }}</span>
+          </div>
+          <div class="flex-1 overflow-y-auto">
+            <div v-for="(ev, i) in reversedFeed" :key="i"
+                 class="px-4 py-2 border-b border-gray-900 hover:bg-gray-900/80 transition-colors cursor-pointer"
+                 @click="openActivityEvent(ev)">
+              <div class="text-[13px] text-gray-600">{{ fmtTime(ev.timestamp) }}</div>
+              <div v-if="ev.agentId" class="text-[13px] text-gray-500 mb-0.5">
+                {{ ev.displayName || ev.agentId }}
+              </div>
+              <div class="pixel-heading text-[8px]" :class="textCls(ev.status)">{{ statusLabel(ev.status) }}</div>
+              <div v-if="ev.images && ev.images.length" class="text-[11px] text-emerald-300 mt-0.5">
+                +{{ ev.images.length }} image{{ ev.images.length > 1 ? 's' : '' }}
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+      <!-- Agent Modal -->
+      <teleport to="body">
+        <div v-if="selectedAgent"
+             class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50"
+             @click.self="closeAgentModal">
+          <div class="bg-gray-900 rounded-xl border border-gray-700 w-full max-w-lg mx-4 overflow-hidden shadow-2xl">
+
+            <!-- Modal header -->
+            <div class="flex items-center gap-3 px-5 py-4 border-b border-gray-800">
+              <img :src="selectedAgent.avatarUrl"
+                   class="w-12 h-12 rounded-full border-2 shrink-0"
+                   :class="borderCls(selectedAgent.status)" />
+              <div>
+                <div class="font-semibold">{{ selectedAgent.displayName || selectedAgent.agentId }}</div>
+                <div v-if="selectedAgent.displayName && selectedAgent.displayName !== selectedAgent.agentId" class="text-xs text-gray-500">
+                  {{ selectedAgent.agentId }}
+                </div>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <div class="w-1.5 h-1.5 rounded-full" :class="dotCls(selectedAgent.status)"></div>
+                  <span class="text-xs" :class="textCls(selectedAgent.status)">
+                    {{ selectedAgent.status || 'unknown' }}
+                  </span>
+                  <span class="text-xs text-gray-600 ml-1">{{ fmtTime(selectedAgent.timestamp) }}</span>
+                </div>
+              </div>
+              <button class="ml-auto pixel-tag text-[8px] border border-gray-700 bg-gray-950 px-2 py-1 text-gray-300 hover:text-white"
+                      @click="openEditName">Edit</button>
+              <button class="text-gray-500 hover:text-gray-200 text-xl leading-none transition-colors"
+                      @click="closeAgentModal">✕</button>
+            </div>
+
+            <!-- Modal body -->
+            <div class="p-5 space-y-4 max-h-[28rem] overflow-y-auto">
+              <div class="panel-frame bg-gray-950/40 p-3">
+                <div class="pixel-heading text-[8px] text-gray-400">Display Name</div>
+                <div v-if="!isEditingName" class="mt-2 flex items-center justify-between gap-2">
+                  <span class="text-[15px] text-gray-200 break-all">{{ selectedAgent.displayName || selectedAgent.agentId }}</span>
+                  <button class="pixel-tag text-[8px] border border-gray-700 bg-gray-950 px-2 py-1 text-gray-300 hover:text-white"
+                          @click="openEditName">Edit</button>
+                </div>
+                <form v-else class="mt-2 space-y-2" @submit.prevent="saveAgentName">
+                  <input
+                    v-model="editedName"
+                    type="text"
+                    maxlength="80"
+                    class="w-full bg-gray-950 border border-gray-700 px-2 py-1 text-[15px] text-gray-200 outline-none focus:border-violet-500"
+                    placeholder="Type agent name"
+                  />
+                  <div class="flex items-center gap-2">
+                    <button type="submit"
+                            class="pixel-tag text-[8px] border border-emerald-700 bg-emerald-950/40 px-2 py-1 text-emerald-300"
+                            :disabled="nameSaving">
+                      {{ nameSaving ? 'Saving...' : 'Save' }}
+                    </button>
+                    <button type="button"
+                            class="pixel-tag text-[8px] border border-gray-700 bg-gray-900 px-2 py-1 text-gray-300"
+                            @click="cancelEditName">
+                      Cancel
+                    </button>
+                    <span class="text-[12px] text-gray-500">Leave empty to reset</span>
+                  </div>
+                  <div v-if="nameError" class="text-[13px] text-red-400">{{ nameError }}</div>
+                </form>
+              </div>
+
+              <!-- Live thinking stream -->
+              <div v-if="selectedAgent.thinkingText">
+                <div class="text-xs text-gray-600 uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <div class="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse"></div>
+                  Thinking
+                </div>
+                <div class="text-sm text-violet-400 md leading-relaxed"
+                     v-html="md(selectedAgent.thinkingText)"></div>
+              </div>
+
+              <!-- Last complete message -->
+              <div v-if="selectedAgent.lastMessage">
+                <div class="text-xs text-gray-600 uppercase tracking-widest mb-2">Last message</div>
+                <div class="text-sm text-gray-300 md leading-relaxed"
+                     v-html="md(selectedAgent.lastMessage)"></div>
+              </div>
+
+              <!-- Empty state -->
+              <p v-if="!selectedAgent.thinkingText && !selectedAgent.lastMessage"
+                 class="text-sm text-gray-600 text-center py-6 font-mono">
+                No messages yet
+              </p>
+
+            </div>
+          </div>
+        </div>
+      </teleport>
+
+      <!-- Activity Event Modal -->
+      <teleport to="body">
+        <div v-if="selectedEvent"
+             class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50"
+             @click.self="closeActivityEvent">
+          <div class="panel-frame bg-gray-900 w-full max-w-2xl mx-4 overflow-hidden shadow-2xl max-h-[80vh] flex flex-col">
+            <div class="flex items-center px-5 py-4 border-b border-gray-800">
+              <div class="pixel-heading text-[9px] text-gray-300">Activity Details</div>
+              <button class="ml-auto text-gray-500 hover:text-gray-200 text-xl leading-none transition-colors"
+                      @click="closeActivityEvent">✕</button>
+            </div>
+            <div class="p-5 space-y-3 overflow-y-auto">
+              <div class="text-[14px] text-gray-400">Time: {{ fmtTime(selectedEvent.timestamp) }}</div>
+              <div class="text-[14px] text-gray-400">Agent: {{ selectedEvent.displayName || selectedEvent.agentId || 'n/a' }}</div>
+              <div class="text-[14px] text-gray-400">Status: {{ statusLabel(selectedEvent.status) }}</div>
+              <div class="panel-frame bg-gray-950/40 p-3">
+                <div class="pixel-heading text-[8px] text-gray-400">Details</div>
+                <div v-if="selectedEvent.details"
+                     class="text-[15px] text-gray-200 mt-2 md whitespace-pre-wrap break-words"
+                     v-html="md(stripInternalDetails(selectedEvent.details))"></div>
+                <div v-else class="text-[14px] text-gray-500 mt-2">No details</div>
+              </div>
+              <div v-if="selectedEvent.images && selectedEvent.images.length" class="panel-frame bg-gray-950/40 p-3">
+                <div class="pixel-heading text-[8px] text-gray-400">Screenshots</div>
+                <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <a v-for="(img, idx) in selectedEvent.images"
+                     :key="selectedEvent.timestamp + '-img-' + idx"
+                     :href="img"
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     class="panel-frame overflow-hidden bg-gray-900/70 border border-gray-700">
+                    <img :src="img"
+                         class="w-full max-h-72 object-contain bg-gray-950/50"
+                         loading="lazy"
+                         alt="screenshot" />
+                  </a>
+                </div>
+              </div>
+              <details v-if="selectedEvent.raw" class="panel-frame raw-json-toggle">
+                <summary class="raw-json-summary">
+                  <span class="pixel-heading text-[8px] text-gray-400">Raw JSON</span>
+                  <span class="raw-json-arrow">▶</span>
+                </summary>
+                <div class="raw-json-body">
+                  <pre class="text-[13px] text-gray-400 whitespace-pre-wrap break-all">{{ selectedEvent.raw }}</pre>
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+      </teleport>
+
+      <!-- Task Modal -->
+      <teleport to="body">
+        <div v-if="selectedTask"
+             class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50"
+             @click.self="closeTask">
+          <div class="panel-frame bg-gray-900 w-full max-w-3xl mx-4 overflow-hidden shadow-2xl max-h-[82vh] flex flex-col">
+            <div class="flex items-center px-5 py-4 border-b border-gray-800">
+              <div>
+                <div class="pixel-heading text-[9px] text-gray-300">{{ selectedTask.title || 'Task' }}</div>
+                <div class="text-[13px] text-gray-500 mt-1">
+                  {{ selectedTask.displayName || selectedTask.agentId || 'n/a' }} · {{ selectedTask.runId || selectedTask.id }}
+                </div>
+              </div>
+              <button class="ml-auto text-gray-500 hover:text-gray-200 text-xl leading-none transition-colors"
+                      @click="closeTask">✕</button>
+            </div>
+            <div class="p-5 overflow-y-auto space-y-2">
+              <div v-if="!selectedTask.comments || !selectedTask.comments.length"
+                   class="text-[14px] text-gray-500">No comments yet</div>
+              <div v-for="(comment, idx) in selectedTask.comments"
+                   :key="comment.id || idx"
+                   class="panel-frame bg-gray-950/40 p-3">
+                <div class="text-[13px] text-gray-500">
+                  {{ fmtTime(comment.timestamp) }} · {{ comment.displayName || comment.agentId || 'System' }}
+                </div>
+                <div class="pixel-heading text-[8px] mt-1" :class="textCls(comment.status)">
+                  {{ statusLabel(comment.status) }}
+                </div>
+                <div v-if="comment.details"
+                     class="text-[15px] text-gray-200 mt-2 md whitespace-pre-wrap break-words"
+                     v-html="md(stripInternalDetails(comment.details))"></div>
+                <div v-if="comment.images && comment.images.length" class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <a v-for="(img, imgIdx) in comment.images"
+                     :key="(comment.id || idx) + '-img-' + imgIdx"
+                     :href="img"
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     class="panel-frame overflow-hidden bg-gray-900/70 border border-gray-700">
+                    <img :src="img"
+                         class="w-full max-h-72 object-contain bg-gray-950/50"
+                         loading="lazy"
+                         alt="task screenshot" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </teleport>
+
+      <!-- Tools Modal -->
+      <teleport to="body">
+        <div v-if="showTools"
+             class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50"
+             @click.self="closeTools">
+          <div class="panel-frame bg-gray-900 w-full max-w-lg mx-4 overflow-hidden shadow-2xl max-h-[80vh] flex flex-col">
+            <div class="flex items-center px-5 py-4 border-b border-gray-800 shrink-0">
+              <div>
+                <div class="pixel-heading text-[9px] text-amber-300">Tools Catalog</div>
+                <div class="text-[13px] text-gray-500 mt-1">{{ tools.length ? tools.length + ' available' : 'waiting…' }}</div>
+              </div>
+              <button class="ml-auto text-gray-500 hover:text-gray-200 text-xl leading-none transition-colors"
+                      @click="closeTools">✕</button>
+            </div>
+            <div class="overflow-y-auto flex-1">
+              <p v-if="!tools.length" class="px-5 py-4 text-[14px] text-gray-600">No tool catalog yet</p>
+              <div v-for="(tool, i) in tools" :key="tool.name + '-' + i"
+                   class="px-5 py-3 border-b border-gray-800/80">
+                <div class="pixel-heading text-[8px] text-amber-300 break-all">{{ tool.name }}</div>
+                <div v-if="tool.kind || tool.provider" class="text-[13px] text-gray-500 mt-1 break-all">
+                  {{ [tool.kind, tool.provider].filter(Boolean).join(' · ') }}
+                </div>
+                <div v-if="tool.description" class="text-[14px] text-gray-300 mt-1 break-words leading-relaxed">
+                  {{ tool.description }}
+                </div>
+              </div>
+              <div v-if="toolsUpdatedAt" class="px-5 py-3 text-[13px] text-gray-600">
+                Updated: {{ fmtTime(toolsUpdatedAt) }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </teleport>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/client.js"></script>
+  </body>
+</html>
