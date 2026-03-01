@@ -1,0 +1,46 @@
+{
+  "name": "openclaw-gateway-listener",
+  "version": "1.0.0",
+  "description": "Real-time WebSocket listener for OpenClaw Gateway - track agent activity, conversations, and skills",
+  "type": "module",
+  "main": "src/listener.ts",
+  "bin": {
+    "openclaw-listen": "./listen.ts"
+  },
+  "scripts": {
+    "start": "tsx listen.ts",
+    "dev": "tsx listen.ts",
+    "dev:json": "tsx listen.ts --json",
+    "serve": "tsx listen.ts --serve",
+    "build": "tsc",
+    "lint": "eslint src --ext .ts"
+  },
+  "keywords": [
+    "openclaw",
+    "gateway",
+    "websocket",
+    "listener",
+    "realtime",
+    "agent",
+    "monitoring"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^3.22.0",
+    "express": "^4.18.2",
+    "socket.io": "^4.7.1"
+  },
+  "optionalDependencies": {
+    "ws": "^8.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
